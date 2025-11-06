@@ -36,11 +36,13 @@ const IllustrationArea = () => (
     <div className="absolute bottom-20 right-20 w-40 h-40 bg-accent/20 rounded-full blur-3xl"></div>
 
     <div className="relative max-w-md text-center z-10">
-      <img
-        src="https://images.pexels.com/photos/4145153/pexels-photo-4145153.jpeg?auto=compress&cs=tinysrgb&w=600"
-        alt="Family connection illustration"
-        className="w-full max-w-md mx-auto rounded-2xl shadow-2xl mb-8"
-      />
+      <div className="relative p-1 rounded-[2rem] bg-gradient-to-br from-primary via-accent to-secondary mb-8">
+        <img
+          src="https://images.pexels.com/photos/4145153/pexels-photo-4145153.jpeg?auto=compress&cs=tinysrgb&w=600"
+          alt="Family connection illustration"
+          className="w-full max-w-md mx-auto rounded-[1.875rem] shadow-2xl"
+        />
+      </div>
       <h2 className="text-3xl font-bold font-heading text-text-dark mb-4">
         Preserve Your Family's Legacy
       </h2>

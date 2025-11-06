@@ -35,3 +35,45 @@ export const joinWaitlist = async (entry: WaitlistEntry) => {
 
   return true;
 };
+
+export interface SignUpData {
+  firstName: string;
+  email: string;
+  password: string;
+}
+
+export const signUp = async ({ firstName, email, password }: SignUpData) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        first_name: firstName,
+      },
+    },
+  });
+
+  if (error) {
+    if (error.message.includes('already registered')) {
+      throw new Error('This email is already registered. Please log in instead.');
+    }
+    throw new Error(error.message || 'Failed to create account. Please try again.');
+  }
+
+  return data;
+};
+
+export const signInWithGoogle = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to sign in with Google. Please try again.');
+  }
+
+  return data;
+};

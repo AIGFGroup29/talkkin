@@ -99,8 +99,15 @@ export const SignUp: React.FC = () => {
       <div className="w-full lg:w-1/2 bg-white flex items-center justify-center px-6 py-12 lg:px-8">
         <div className="w-full max-w-[420px]">
           <Link to="/" className="inline-block mb-12">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-semibold font-heading text-primary">TalkKin</span>
+            <div className="flex items-center gap-3">
+              <img
+                src="/AIGF_Logo_Transparent copy.png"
+                alt="TalkKin Logo"
+                className="h-12 w-12"
+              />
+              <span className="text-2xl font-semibold font-heading text-primary">
+                T<span className="text-accent">a</span>lkK<span className="text-accent">i</span>n
+              </span>
             </div>
           </Link>
 

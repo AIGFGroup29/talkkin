@@ -77,3 +77,24 @@ export const signInWithGoogle = async () => {
 
   return data;
 };
+
+export interface SignInData {
+  email: string;
+  password: string;
+}
+
+export const signIn = async ({ email, password }: SignInData) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    if (error.message.includes('Invalid login credentials')) {
+      throw new Error('Invalid email or password. Please try again.');
+    }
+    throw new Error(error.message || 'Failed to sign in. Please try again.');
+  }
+
+  return data;
+};

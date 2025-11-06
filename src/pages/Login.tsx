@@ -39,8 +39,8 @@ const IllustrationArea = () => (
     <div className="relative max-w-md text-center z-10">
       <div className="relative p-1 rounded-[2rem] bg-gradient-to-br from-accent via-secondary to-primary mb-8">
         <img
-          src="https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=600"
-          alt="Connection illustration"
+          src="https://images.pexels.com/photos/5699456/pexels-photo-5699456.jpeg?auto=compress&cs=tinysrgb&w=600"
+          alt="Family video call connection"
           className="w-full max-w-md mx-auto rounded-[1.875rem] shadow-2xl"
         />
       </div>

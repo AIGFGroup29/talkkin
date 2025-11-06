@@ -50,11 +50,6 @@ const IllustrationArea = () => (
         Create meaningful connections that last for generations
       </p>
     </div>
-
-    <div className="absolute top-1/4 right-12 w-3 h-3 bg-accent rounded-full"></div>
-    <div className="absolute top-1/3 left-12 w-2 h-2 bg-primary rounded-full"></div>
-    <div className="absolute bottom-1/4 left-20 w-4 h-4 bg-secondary rounded-full opacity-60"></div>
-    <div className="absolute bottom-1/3 right-24 w-2 h-2 bg-support rounded-full"></div>
   </div>
 );
 

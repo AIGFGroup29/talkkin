@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, MessageCircle, User, Check, Play, FileText, Volume2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const BasicPlanOnboarding = () => {
   const navigate = useNavigate();
@@ -34,13 +35,46 @@ const BasicPlanOnboarding = () => {
     { id: 4, name: 'Wise & Thoughtful', gender: 'Male' }
   ];
 
-  const addFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const addFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files).map(f => ({
+
+    const fileArray = Array.from(e.target.files);
+    const newFiles = fileArray.map(f => ({
       name: f.name,
       size: (f.size / 1024).toFixed(2) + ' KB'
     }));
     setFiles([...files, ...newFiles]);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      const documentsToInsert = fileArray.map(file => {
+        const fileExtension = file.name.split('.').pop() || '';
+        return {
+          user_id: user.id,
+          file_name: file.name,
+          file_type: fileExtension,
+          file_size: file.size,
+          file_url: '',
+          status: 'uploaded'
+        };
+      });
+
+      const { error } = await supabase
+        .from('rag_documents')
+        .insert(documentsToInsert);
+
+      if (error) {
+        console.error('Error saving files to database:', error);
+      }
+    } catch (error) {
+      console.error('Error in addFile:', error);
+    }
   };
 
   const saveAnswer = () => {

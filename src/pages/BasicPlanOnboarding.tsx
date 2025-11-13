@@ -53,25 +53,20 @@ const BasicPlanOnboarding = () => {
         return;
       }
 
-      const documentsToInsert = fileArray.map(file => {
-        const fileExtension = file.name.split('.').pop() || '';
-        return {
-          user_id: user.id,
-          file_name: file.name,
-          file_type: fileExtension,
-          file_size: file.size,
-          file_url: '',
-          status: 'uploaded'
-        };
-      });
+      const documentsToInsert = fileArray.map(file => ({
+        user_id: user.id,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        file_url: '',
+        status: 'uploaded'
+      }));
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('rag_documents')
         .insert(documentsToInsert);
 
-      if (error) {
-        console.error('Error saving files to database:', error);
-      }
+      console.log('Database insert result:', { data, error });
     } catch (error) {
       console.error('Error in addFile:', error);
     }

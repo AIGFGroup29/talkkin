@@ -74,6 +74,11 @@ const BasicPlanOnboarding = () => {
 
   const saveAnswer = () => {
     if (!answer.trim()) return;
+
+    const currentAnswer = answer;
+    const currentQuestionNumber = currentQ;
+    const currentQuestionText = questions[currentQ];
+
     setAnswers([...answers, answer]);
     setAnswer('');
     if (currentQ < questions.length - 1) {
@@ -81,6 +86,29 @@ const BasicPlanOnboarding = () => {
     } else {
       setStep(4);
     }
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+
+      supabase
+        .from('story_answers')
+        .insert({
+          user_id: user.id,
+          question_number: currentQuestionNumber,
+          question_text: currentQuestionText,
+          answer_text: currentAnswer
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('Failed to save story answer to database:', error);
+          }
+        })
+        .catch((err) => {
+          console.error('Error saving story answer:', err);
+        });
+    }).catch((err) => {
+      console.error('Error getting user for story answer save:', err);
+    });
   };
 
   const goBackInQuestions = () => {

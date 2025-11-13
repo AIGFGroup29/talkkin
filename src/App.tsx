@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import BasicPlanOnboarding from './pages/BasicPlanOnboarding';
 import BasicPlanDashboard from './pages/BasicPlanDashboard';
 import PremiumPlanOnboarding from './pages/PremiumPlanOnboarding';
+import PremiumPlanDashboard from './pages/PremiumPlanDashboard';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/onboarding/basic" element={<BasicPlanOnboarding />} />
         <Route path="/onboarding/premium" element={<PremiumPlanOnboarding />} />
         <Route path="/dashboard/basic" element={<BasicPlanDashboard />} />
+        <Route path="/dashboard/premium" element={<PremiumPlanDashboard />} />
       </Routes>
     </Router>
   );

@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Upload, MessageCircle, Camera, Mic, Video, Check, X, AlertCircle, FileText } from 'lucide-react';
 
 const PremiumPlanOnboarding = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ name: string; url: string }>>([]);
   const [voiceRecorded, setVoiceRecorded] = useState(false);
@@ -863,7 +865,7 @@ const PremiumPlanOnboarding = () => {
             </div>
 
             <button
-              onClick={() => setStep(1)}
+              onClick={() => navigate('/dashboard/premium')}
               style={{
                 padding: '12px 24px',
                 borderRadius: '9999px',
@@ -874,7 +876,7 @@ const PremiumPlanOnboarding = () => {
                 cursor: 'pointer'
               }}
             >
-              Reset Demo
+              Go to Dashboard
             </button>
           </div>
         </div>

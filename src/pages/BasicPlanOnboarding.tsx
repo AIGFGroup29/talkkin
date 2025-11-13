@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Upload, MessageCircle, User, Check, Play, FileText, Volume2 } from 'lucide-react';
 
 const BasicPlanOnboarding = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [files, setFiles] = useState<Array<{ name: string; size: string }>>([]);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -674,7 +676,7 @@ const BasicPlanOnboarding = () => {
             </div>
 
             <button
-              onClick={() => setStep(1)}
+              onClick={() => navigate('/dashboard/basic')}
               style={{
                 padding: '12px 24px',
                 borderRadius: '9999px',
@@ -685,7 +687,7 @@ const BasicPlanOnboarding = () => {
                 cursor: 'pointer'
               }}
             >
-              Reset Demo
+              Go to Dashboard
             </button>
           </div>
         </div>

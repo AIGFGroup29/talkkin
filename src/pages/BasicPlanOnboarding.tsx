@@ -645,7 +645,33 @@ const BasicPlanOnboarding = () => {
                   Back
                 </button>
                 <button
-                  onClick={() => setStep(7)}
+                  onClick={async () => {
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+
+                      if (user) {
+                        const selectedAvatar = avatars.find(a => a.id === avatar);
+                        const selectedVoice = voices.find(v => v.id === voice);
+
+                        const { data, error } = await supabase
+                          .from('avatars')
+                          .insert({
+                            user_id: user.id,
+                            avatar_name: 'Memory Keeper',
+                            avatar_type: selectedAvatar?.name || null,
+                            voice_type: selectedVoice?.name || null,
+                            status: 'pending',
+                            language: 'English'
+                          });
+
+                        console.log('Avatar creation result:', { data, error });
+                      }
+                    } catch (error) {
+                      console.error('Error creating avatar in database:', error);
+                    }
+
+                    setStep(7);
+                  }}
                   style={{
                     flex: 1,
                     background: 'linear-gradient(to right, #83b3d8, #f2911b)',

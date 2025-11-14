@@ -6,7 +6,7 @@ const steps = [
   {
     number: '01',
     icon: Mic2,
-    title: 'Share Your Voice & Stories',
+    title: 'Share Your Voice & Photos',
     description: 'Talk about your recipes, your advice, your memories. Share your pictures. Just like you\'re talking to someone on the phone.',
   },
   {

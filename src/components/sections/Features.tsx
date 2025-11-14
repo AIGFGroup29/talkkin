@@ -12,7 +12,7 @@ const features = [
   {
     icon: Volume2,
     title: 'Sounds Exactly Like You',
-    description: 'We use your real voice—your accent, your laugh, your way of speaking. 99% of families say the avatar sounds exactly like their loved one.',
+    description: 'We use your real voice, your accent, your laugh, your way of speaking. 99% of families say the avatar sounds exactly like their loved one.',
   },
   {
     icon: BookOpen,

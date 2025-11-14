@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle, Users, Settings, CreditCard, Send, Check, Upload, LogOut, User, Sparkles, TrendingUp, Lock, Download, Trash2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const BasicPlanDashboard = () => {
   const [activeTab, setActiveTab] = useState('interact');
@@ -12,6 +13,32 @@ const BasicPlanDashboard = () => {
   const [avatarName, setAvatarName] = useState('Memory Keeper');
   const [tempAvatarName, setTempAvatarName] = useState('Memory Keeper');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [avatarStatus, setAvatarStatus] = useState<'pending' | 'processing' | 'ready'>('pending');
+
+  useEffect(() => {
+    const loadAvatarData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('avatars')
+            .select('avatar_name, status')
+            .eq('user_id', user.id)
+            .single();
+
+          if (data && !error) {
+            setAvatarName(data.avatar_name);
+            setTempAvatarName(data.avatar_name);
+            setAvatarStatus(data.status);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading avatar data:', error);
+      }
+    };
+
+    loadAvatarData();
+  }, []);
 
   const sendMsg = () => {
     if (!message.trim()) return;
@@ -174,9 +201,22 @@ const BasicPlanDashboard = () => {
 
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{ marginBottom: '32px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                     <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: 'white', margin: 0 }}>{avatarName}</h2>
                     <Sparkles style={{ width: '28px', height: '28px', color: 'rgba(255,255,255,0.8)' }} />
+                    <span style={{
+                      padding: '6px 16px',
+                      borderRadius: '9999px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      background: avatarStatus === 'ready' ? 'rgba(16, 185, 129, 0.2)' : avatarStatus === 'processing' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(156, 163, 175, 0.2)',
+                      color: 'white',
+                      border: `1px solid ${avatarStatus === 'ready' ? 'rgba(16, 185, 129, 0.4)' : avatarStatus === 'processing' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(156, 163, 175, 0.4)'}`
+                    }}>
+                      {avatarStatus === 'ready' ? '✓ Ready' : avatarStatus === 'processing' ? '⟳ Processing' : '⋯ Pending'}
+                    </span>
                   </div>
                   <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.9)', margin: 0 }}>Ready to share memories and stories</p>
                 </div>

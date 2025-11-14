@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Users, Settings, CreditCard, Send, Check, Upload, LogOut, User, Sparkles, TrendingUp, Lock, Download, Trash2 } from 'lucide-react';
+import { MessageCircle, Users, Settings, CreditCard, Send, Check, Upload, LogOut, User, Sparkles, TrendingUp, Lock, Download, Trash2, FileText, File } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+
+interface RagDocument {
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  uploaded_at: string;
+  status: 'uploaded' | 'processing' | 'embedded';
+}
 
 const BasicPlanDashboard = () => {
   const [activeTab, setActiveTab] = useState('interact');
@@ -14,6 +22,7 @@ const BasicPlanDashboard = () => {
   const [tempAvatarName, setTempAvatarName] = useState('Memory Keeper');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [avatarStatus, setAvatarStatus] = useState<'pending' | 'processing' | 'ready'>('pending');
+  const [documents, setDocuments] = useState<RagDocument[]>([]);
 
   useEffect(() => {
     const loadAvatarData = async () => {
@@ -39,6 +48,49 @@ const BasicPlanDashboard = () => {
 
     loadAvatarData();
   }, []);
+
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (activeTab === 'settings') {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data, error } = await supabase
+              .from('rag_documents')
+              .select('file_name, file_size, file_type, uploaded_at, status')
+              .eq('user_id', user.id)
+              .order('uploaded_at', { ascending: false });
+
+            if (data && !error) {
+              setDocuments(data);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading documents:', error);
+        }
+      }
+    };
+
+    loadDocuments();
+  }, [activeTab]);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType === 'application/pdf' || fileType.includes('pdf')) {
+      return <FileText style={{ width: '24px', height: '24px', color: '#ef4444' }} />;
+    }
+    return <File style={{ width: '24px', height: '24px', color: '#6b7280' }} />;
+  };
 
   const sendMsg = () => {
     if (!message.trim()) return;
@@ -666,6 +718,76 @@ const BasicPlanDashboard = () => {
                 <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px' }}>
                   Supported formats: PDF, TXT, DOCX (up to 10MB each)
                 </p>
+
+                {documents.length === 0 ? (
+                  <div style={{
+                    marginTop: '20px',
+                    padding: '24px',
+                    background: '#f8fbfc',
+                    borderRadius: '12px',
+                    border: '2px dashed #b3e1f4',
+                    textAlign: 'center'
+                  }}>
+                    <Upload style={{ width: '40px', height: '40px', color: '#9ca3af', margin: '0 auto 12px' }} />
+                    <p style={{ color: '#6b7280', fontSize: '15px', margin: 0 }}>No documents uploaded yet</p>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {documents.map((doc, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '16px',
+                          padding: '16px',
+                          background: '#f8fbfc',
+                          borderRadius: '12px',
+                          border: '1px solid #e5e7eb'
+                        }}
+                      >
+                        <div style={{ flexShrink: 0 }}>
+                          {getFileIcon(doc.file_type)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: '#1f2937',
+                            margin: '0 0 4px 0',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {doc.file_name}
+                          </p>
+                          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                              {formatFileSize(doc.file_size)}
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#9ca3af' }}>•</span>
+                            <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                              {formatDate(doc.uploaded_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          whiteSpace: 'nowrap',
+                          background: doc.status === 'embedded' ? '#d1fae5' : doc.status === 'processing' ? '#fef3c7' : '#e5e7eb',
+                          color: doc.status === 'embedded' ? '#065f46' : doc.status === 'processing' ? '#92400e' : '#374151'
+                        }}>
+                          {doc.status === 'embedded' ? 'Ready' : doc.status === 'processing' ? 'Processing' : 'Uploaded'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button

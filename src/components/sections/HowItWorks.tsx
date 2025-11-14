@@ -38,7 +38,7 @@ export const HowItWorks: React.FC = () => {
             Your Story, Three Simple Steps
           </h2>
           <p className="text-lg sm:text-xl text-text-light max-w-3xl mx-auto">
-            Create your personal avatar in minutes. Share the link with family. They can interact with you anytime.
+            Ready to get started? It's easier than you think.
           </p>
         </motion.div>
 

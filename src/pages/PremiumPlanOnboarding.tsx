@@ -152,6 +152,12 @@ const PremiumPlanOnboarding = () => {
           question_number: currentQ + 1,
           question_text: questions[currentQ],
           answer_text: answer
+        }).then(({ data, error }) => {
+          if (error) {
+            console.error('Error saving story answer to database:', error);
+          } else {
+            console.log(`Story answer ${currentQ + 1} saved to database`);
+          }
         });
       }
     }

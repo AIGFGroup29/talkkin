@@ -1,27 +1,187 @@
-import React, { useState } from 'react';
-import { MessageCircle, Users, Settings, CreditCard, Send, Check, Upload, LogOut, Video, Volume2, VolumeX, Download, Trash2, Lock, Sparkles, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MessageCircle, Users, Settings, CreditCard, Send, Check, Upload, LogOut, Video, Volume2, VolumeX, Download, Trash2, Lock, Sparkles, TrendingUp, FileText, File } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+interface RagDocument {
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  uploaded_at: string;
+  status: 'uploaded' | 'processing' | 'embedded';
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  created_at?: string;
+}
+
+interface FamilyMember {
+  id?: string;
+  name: string;
+  email: string;
+  status: 'invited' | 'active';
+  invitation_sent_at?: string;
+}
 
 const PremiumPlanDashboard = () => {
   const [activeTab, setActiveTab] = useState('interact');
   const [message, setMessage] = useState('');
-  const [chat, setChat] = useState([
+  const [chat, setChat] = useState<ChatMessage[]>([
     { role: 'assistant', content: "Hello! I'm your AI digital twin. I can share memories from my life and answer questions about my experiences. What would you like to know?" }
   ]);
   const [isAvatarSpeaking, setIsAvatarSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [avatarName, setAvatarName] = useState('Grandma Rose');
   const [tempAvatarName, setTempAvatarName] = useState('Grandma Rose');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [avatarStatus, setAvatarStatus] = useState<'pending' | 'processing' | 'ready'>('pending');
+  const [documents, setDocuments] = useState<RagDocument[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyName, setFamilyName] = useState('');
+  const [familyEmail, setFamilyEmail] = useState('');
+  const [familyError, setFamilyError] = useState('');
+  const [familySuccess, setFamilySuccess] = useState('');
+
+  useEffect(() => {
+    const loadAvatarData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+
+          const { data, error } = await supabase
+            .from('avatars')
+            .select('avatar_name, status')
+            .eq('user_id', user.id)
+            .single();
+
+          if (data && !error) {
+            setAvatarName(data.avatar_name);
+            setTempAvatarName(data.avatar_name);
+            setAvatarStatus(data.status);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading avatar data:', error);
+      }
+    };
+
+    loadAvatarData();
+  }, []);
+
+  useEffect(() => {
+    const loadChatMessages = async () => {
+      if (activeTab === 'interact' && userId) {
+        try {
+          const { data, error } = await supabase
+            .from('chat_messages')
+            .select('role, content, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true });
+
+          if (data && !error && data.length > 0) {
+            setChat(data);
+          }
+        } catch (error) {
+          console.error('Error loading chat messages:', error);
+        }
+      }
+    };
+
+    loadChatMessages();
+  }, [activeTab, userId]);
+
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (activeTab === 'settings' && userId) {
+        try {
+          const { data, error } = await supabase
+            .from('rag_documents')
+            .select('file_name, file_size, file_type, uploaded_at, status')
+            .eq('user_id', userId)
+            .order('uploaded_at', { ascending: false });
+
+          if (data && !error) {
+            setDocuments(data);
+          }
+        } catch (error) {
+          console.error('Error loading documents:', error);
+        }
+      }
+    };
+
+    loadDocuments();
+  }, [activeTab, userId]);
+
+  useEffect(() => {
+    const loadFamilyMembers = async () => {
+      if (activeTab === 'family' && userId) {
+        try {
+          const { data, error } = await supabase
+            .from('family_members')
+            .select('*')
+            .eq('owner_user_id', userId);
+
+          if (data && !error) {
+            setFamilyMembers(data);
+          }
+        } catch (error) {
+          console.error('Error loading family members:', error);
+        }
+      }
+    };
+
+    loadFamilyMembers();
+  }, [activeTab, userId]);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType === 'application/pdf' || fileType.includes('pdf')) {
+      return <FileText style={{ width: '24px', height: '24px', color: '#ef4444' }} />;
+    }
+    return <File style={{ width: '24px', height: '24px', color: '#6b7280' }} />;
+  };
 
   const sendMsg = () => {
     if (!message.trim()) return;
+
+    const userMessage = message;
+    const assistantResponse = "That's a wonderful question! Based on my memories, I remember...";
+
     setIsAvatarSpeaking(true);
     setChat([...chat,
-      { role: 'user', content: message },
-      { role: 'assistant', content: "That's a wonderful question! Based on my memories, I remember..." }
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: assistantResponse }
     ]);
     setMessage('');
+
+    if (userId) {
+      supabase.from('chat_messages').insert({
+        user_id: userId,
+        role: 'user',
+        content: userMessage
+      }).then(() => {
+        supabase.from('chat_messages').insert({
+          user_id: userId,
+          role: 'assistant',
+          content: assistantResponse
+        });
+      });
+    }
+
     setTimeout(() => setIsAvatarSpeaking(false), 3000);
   };
 
@@ -31,6 +191,59 @@ const PremiumPlanDashboard = () => {
     setTimeout(() => {
       setShowSaveSuccess(false);
     }, 3000);
+  };
+
+  const sendFamilyInvitation = async () => {
+    if (!userId || !familyName.trim() || !familyEmail.trim()) {
+      setFamilyError('Please fill in all fields');
+      setTimeout(() => setFamilyError(''), 3000);
+      return;
+    }
+
+    try {
+      const { count, error: countError } = await supabase
+        .from('family_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_user_id', userId);
+
+      if (countError) throw countError;
+
+      if (count !== null && count >= 5) {
+        setFamilyError('Maximum 5 family members for Premium Plan');
+        setTimeout(() => setFamilyError(''), 3000);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('family_members')
+        .insert({
+          owner_user_id: userId,
+          name: familyName,
+          email: familyEmail,
+          status: 'invited',
+          invitation_sent_at: new Date().toISOString()
+        });
+
+      if (insertError) throw insertError;
+
+      setFamilySuccess('Invitation sent successfully!');
+      setFamilyName('');
+      setFamilyEmail('');
+      setTimeout(() => setFamilySuccess(''), 3000);
+
+      const { data } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('owner_user_id', userId);
+
+      if (data) {
+        setFamilyMembers(data);
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      setFamilyError('Failed to send invitation');
+      setTimeout(() => setFamilyError(''), 3000);
+    }
   };
 
   return (
@@ -408,6 +621,38 @@ const PremiumPlanDashboard = () => {
             maxWidth: '900px',
             margin: '0 auto'
           }}>
+            {familyError && (
+              <div style={{
+                position: 'fixed',
+                top: '24px',
+                right: '24px',
+                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                color: 'white',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                boxShadow: '0 8px 32px rgba(239, 68, 68, 0.4)',
+                zIndex: 1000
+              }}>
+                {familyError}
+              </div>
+            )}
+
+            {familySuccess && (
+              <div style={{
+                position: 'fixed',
+                top: '24px',
+                right: '24px',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                boxShadow: '0 8px 32px rgba(16, 185, 129, 0.4)',
+                zIndex: 1000
+              }}>
+                {familySuccess}
+              </div>
+            )}
+
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
               <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: '#1f2937', marginBottom: '12px' }}>Family Access</h2>
               <p style={{ fontSize: '18px', color: '#6b7280', margin: 0 }}>Share your AI digital twin with up to 5 family members</p>
@@ -422,11 +667,11 @@ const PremiumPlanDashboard = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
                 <h3 style={{ fontSize: '28px', fontWeight: '600', color: '#1f2937', margin: 0 }}>Available Seats</h3>
-                <span style={{ fontSize: '56px', fontWeight: 'bold', color: '#1f2937' }}>5 / 5</span>
+                <span style={{ fontSize: '56px', fontWeight: 'bold', color: '#1f2937' }}>{familyMembers.length} / 5</span>
               </div>
               <div style={{ width: '100%', height: '16px', background: 'rgba(255,255,255,0.4)', borderRadius: '9999px', overflow: 'hidden' }}>
                 <div style={{
-                  width: '80%',
+                  width: `${(familyMembers.length / 5) * 100}%`,
                   height: '100%',
                   background: 'linear-gradient(to right, #83b3d8, #f2911b)',
                   transition: 'width 0.5s ease'
@@ -447,6 +692,8 @@ const PremiumPlanDashboard = () => {
               <input
                 type="text"
                 placeholder="Enter name"
+                value={familyName}
+                onChange={(e) => setFamilyName(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '18px 24px',
@@ -472,6 +719,8 @@ const PremiumPlanDashboard = () => {
               <input
                 type="email"
                 placeholder="Enter email address"
+                value={familyEmail}
+                onChange={(e) => setFamilyEmail(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '18px 24px',
@@ -513,19 +762,22 @@ const PremiumPlanDashboard = () => {
               </label>
             </div>
 
-            <button style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #83b3d8, #f2911b)',
-              color: 'white',
-              fontSize: '18px',
-              fontWeight: '600',
-              padding: '20px',
-              borderRadius: '9999px',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(131, 179, 216, 0.4)',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}>
+            <button
+              onClick={sendFamilyInvitation}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #83b3d8, #f2911b)',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: '600',
+                padding: '20px',
+                borderRadius: '9999px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(131, 179, 216, 0.4)',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+            >
               Send Invitation
             </button>
 
@@ -546,45 +798,56 @@ const PremiumPlanDashboard = () => {
                 <Users style={{ width: '28px', height: '28px', color: '#83b3d8' }} />
                 Active Members
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {[
-                  { name: 'Sarah Johnson', email: 'sarah.j@email.com', status: 'Active' },
-                  { name: 'Michael Chen', email: 'm.chen@email.com', status: 'Active' },
-                  { name: 'Emily Davis', email: 'emily.davis@email.com', status: 'Active' },
-                  { name: 'Robert Martinez', email: 'r.martinez@email.com', status: 'Pending' }
-                ].map((member, idx) => (
-                  <div key={idx} style={{
-                    background: '#f8fbfc',
-                    borderRadius: '16px',
-                    padding: '20px',
-                    border: '2px solid #b3e1f4',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '12px'
-                  }}>
-                    <div>
-                      <p style={{ fontWeight: '600', color: '#1f2937', margin: '0 0 4px 0', fontSize: '16px' }}>
-                        {member.name}
-                      </p>
-                      <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-                        {member.email}
-                      </p>
-                    </div>
-                    <span style={{
-                      padding: '6px 16px',
-                      borderRadius: '9999px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      background: member.status === 'Active' ? '#d1fae5' : '#fed7aa',
-                      color: member.status === 'Active' ? '#065f46' : '#92400e'
+              {familyMembers.length === 0 ? (
+                <div style={{
+                  background: '#f8fbfc',
+                  borderRadius: '16px',
+                  padding: '32px',
+                  textAlign: 'center',
+                  border: '2px dashed #b3e1f4'
+                }}>
+                  <Users style={{ width: '48px', height: '48px', color: '#9ca3af', margin: '0 auto 16px' }} />
+                  <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>No family members invited yet</p>
+                  <p style={{ color: '#9ca3af', fontSize: '14px', margin: '8px 0 0 0' }}>Invite up to 5 family members to share memories</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {familyMembers.map((member, idx) => (
+                    <div key={idx} style={{
+                      background: '#f8fbfc',
+                      borderRadius: '16px',
+                      padding: '20px',
+                      border: '2px solid #b3e1f4',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '12px'
                     }}>
-                      {member.status}
-                    </span>
+                      <div>
+                        <p style={{ fontWeight: '600', color: '#1f2937', margin: '0 0 4px 0', fontSize: '16px' }}>
+                          {member.name}
+                        </p>
+                        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+                          {member.email}
+                        </p>
+                      </div>
+                      <span style={{
+                        padding: '6px 16px',
+                        borderRadius: '9999px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        background: member.status === 'active' ? '#d1fae5' : '#fed7aa',
+                        color: member.status === 'active' ? '#065f46' : '#92400e'
+                      }}>
+                        {member.status === 'active' ? 'Active' : 'Invited'}
+                      </span>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -678,6 +941,76 @@ const PremiumPlanDashboard = () => {
                 <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px' }}>
                   Supported formats: PDF, TXT, DOCX, MP3, MP4 (up to 50MB each)
                 </p>
+
+                {documents.length === 0 ? (
+                  <div style={{
+                    marginTop: '20px',
+                    padding: '24px',
+                    background: '#f8fbfc',
+                    borderRadius: '12px',
+                    border: '2px dashed #b3e1f4',
+                    textAlign: 'center'
+                  }}>
+                    <Upload style={{ width: '40px', height: '40px', color: '#9ca3af', margin: '0 auto 12px' }} />
+                    <p style={{ color: '#6b7280', fontSize: '15px', margin: 0 }}>No documents uploaded yet</p>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {documents.map((doc, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '16px',
+                          padding: '16px',
+                          background: '#f8fbfc',
+                          borderRadius: '12px',
+                          border: '1px solid #e5e7eb'
+                        }}
+                      >
+                        <div style={{ flexShrink: 0 }}>
+                          {getFileIcon(doc.file_type)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: '#1f2937',
+                            margin: '0 0 4px 0',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {doc.file_name}
+                          </p>
+                          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                              {formatFileSize(doc.file_size)}
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#9ca3af' }}>•</span>
+                            <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                              {formatDate(doc.uploaded_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          whiteSpace: 'nowrap',
+                          background: doc.status === 'embedded' ? '#d1fae5' : doc.status === 'processing' ? '#fef3c7' : '#e5e7eb',
+                          color: doc.status === 'embedded' ? '#065f46' : doc.status === 'processing' ? '#92400e' : '#374151'
+                        }}>
+                          {doc.status === 'embedded' ? 'Ready' : doc.status === 'processing' ? 'Processing' : 'Uploaded'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '24px' }}>

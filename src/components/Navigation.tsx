@@ -69,7 +69,16 @@ export const Navigation: React.FC<NavigationProps> = () => {
             </button>
           </div>
 
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-6">
+            <button
+              onClick={() => navigate('/login')}
+              className="text-lg transition-colors font-normal"
+              style={{ color: '#6b7280' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#1f2937'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+            >
+              Sign In
+            </button>
             <Button variant="accent" onClick={() => navigate('/signup')}>
               GET STARTED
             </Button>
@@ -111,6 +120,13 @@ export const Navigation: React.FC<NavigationProps> = () => {
                 className="block w-full text-left text-lg text-text-dark hover:text-primary transition-colors py-2"
               >
                 FAQ
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="block w-full text-left text-lg transition-colors py-2"
+                style={{ color: '#6b7280' }}
+              >
+                Sign In
               </button>
               <Button variant="accent" className="w-full" onClick={() => navigate('/signup')}>
                 GET STARTED

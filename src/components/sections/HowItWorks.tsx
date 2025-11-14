@@ -7,7 +7,7 @@ const steps = [
     number: '01',
     icon: Mic2,
     title: 'Share Your Voice & Stories',
-    description: 'Record your voice naturally, share your photos, and upload your advice, recipes or favorite memories. No typing. No complicated steps. Just speak and share.',
+    description: 'Talk about your recipes, your advice, your memories. Share your pictures. Just like you\'re talking to someone on the phone.',
   },
   {
     number: '02',
@@ -19,7 +19,7 @@ const steps = [
     number: '03',
     icon: Users,
     title: 'Family Connects Anytime',
-    description: 'Your grandchildren ask questions. Your avatar answers in your voice with your wisdom. Your kids hear your stories whenever they miss you. You\'re always there to help.',
+    description: 'Your granddaughter needs your pasta recipe? Your son needs your advice? Your helper answers them, in your voice, with your wisdom. Any time of day or night.',
   },
 ];
 

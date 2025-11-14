@@ -19,7 +19,7 @@ const steps = [
     number: '03',
     icon: Users,
     title: 'Family Connects Anytime',
-    description: 'Your granddaughter needs your pasta recipe? Your son needs your advice? Your helper answers them, in your voice, with your wisdom. Any time of day or night.',
+    description: 'Your granddaughter needs your pasta recipe? Your son needs your advice? Your avatar answers them, in your voice, with your wisdom. Any time of day or night.',
   },
 ];
 

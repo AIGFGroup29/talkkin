@@ -89,7 +89,7 @@ export const Login: React.FC = () => {
       }
 
       await signIn(data);
-      navigate('/');
+      navigate('/choose-plan');
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
     } finally {

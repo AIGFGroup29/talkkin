@@ -10,13 +10,20 @@ interface RagDocument {
   status: 'uploaded' | 'processing' | 'embedded';
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  created_at?: string;
+}
+
 const BasicPlanDashboard = () => {
   const [activeTab, setActiveTab] = useState('interact');
   const [message, setMessage] = useState('');
-  const [chat, setChat] = useState([
+  const [chat, setChat] = useState<ChatMessage[]>([
     { role: 'assistant', content: "Hi! I'm your memory avatar. Ask me anything about the stories and memories you've shared!" }
   ]);
   const [isAvatarThinking, setIsAvatarThinking] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [avatarName, setAvatarName] = useState('Memory Keeper');
   const [tempAvatarName, setTempAvatarName] = useState('Memory Keeper');
@@ -29,6 +36,8 @@ const BasicPlanDashboard = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          setUserId(user.id);
+
           const { data, error } = await supabase
             .from('avatars')
             .select('avatar_name, status')
@@ -48,6 +57,28 @@ const BasicPlanDashboard = () => {
 
     loadAvatarData();
   }, []);
+
+  useEffect(() => {
+    const loadChatMessages = async () => {
+      if (activeTab === 'interact' && userId) {
+        try {
+          const { data, error } = await supabase
+            .from('chat_messages')
+            .select('role, content, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true });
+
+          if (data && !error && data.length > 0) {
+            setChat(data);
+          }
+        } catch (error) {
+          console.error('Error loading chat messages:', error);
+        }
+      }
+    };
+
+    loadChatMessages();
+  }, [activeTab, userId]);
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -94,12 +125,31 @@ const BasicPlanDashboard = () => {
 
   const sendMsg = () => {
     if (!message.trim()) return;
+
+    const userMessage = message;
+    const assistantResponse = "That's a wonderful question! Based on your memories, I remember you shared that...";
+
     setIsAvatarThinking(true);
     setChat([...chat,
-      { role: 'user', content: message },
-      { role: 'assistant', content: "That's a wonderful question! Based on your memories, I remember you shared that..." }
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: assistantResponse }
     ]);
     setMessage('');
+
+    if (userId) {
+      supabase.from('chat_messages').insert({
+        user_id: userId,
+        role: 'user',
+        content: userMessage
+      }).then(() => {
+        supabase.from('chat_messages').insert({
+          user_id: userId,
+          role: 'assistant',
+          content: assistantResponse
+        });
+      });
+    }
+
     setTimeout(() => setIsAvatarThinking(false), 2000);
   };
 

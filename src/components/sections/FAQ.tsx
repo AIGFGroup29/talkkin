@@ -29,7 +29,7 @@ const faqCategories = [
     questions: [
       {
         question: 'How do you keep my data safe?',
-        answer: 'HIPAA Compliant. Military-grade encryption (AES 256). Bank-level security. Your data is stored in secure U.S. data centers. We never sell, share, or train AI on your content.',
+        answer: 'HIPAA Compliant. Military grade encryption (AES 256). Bank-level security. Your data is stored in secure U.S. data centers. We never sell, share, or train AI on your content.',
       },
       {
         question: 'Will my avatar really sound like me?',

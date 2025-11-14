@@ -33,7 +33,7 @@ export const Benefits: React.FC = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading text-text-dark mb-4">
-            Why Choose TalkKin
+            Why Families Choose TalkKin
           </h2>
           <p className="text-lg sm:text-xl text-text-light max-w-3xl mx-auto">
             Keep your stories, voice, and wisdom alive so your loved ones can connect with you anytime.

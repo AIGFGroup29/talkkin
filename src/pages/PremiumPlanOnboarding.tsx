@@ -45,7 +45,7 @@ const PremiumPlanOnboarding = () => {
 
   const languages = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Mandarin', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Dutch'];
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const newFiles = Array.from(e.target.files).slice(0, 10 - uploadedPhotos.length);
     const photoObjects = newFiles.map(file => ({
@@ -55,8 +55,8 @@ const PremiumPlanOnboarding = () => {
     setUploadedPhotos([...uploadedPhotos, ...photoObjects]);
 
     if (userId) {
-      newFiles.forEach(file => {
-        supabase.from('rag_documents').insert({
+      for (const file of newFiles) {
+        const { data, error } = await supabase.from('rag_documents').insert({
           user_id: userId,
           file_name: file.name,
           file_type: file.type,
@@ -64,7 +64,13 @@ const PremiumPlanOnboarding = () => {
           file_url: '',
           status: 'uploaded'
         });
-      });
+
+        if (error) {
+          console.error('Error saving photo to database:', error);
+        } else {
+          console.log('Photo saved to database:', file.name);
+        }
+      }
     }
   };
 
@@ -80,7 +86,7 @@ const PremiumPlanOnboarding = () => {
     }
   };
 
-  const addFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const addFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const newFilesArray = Array.from(e.target.files);
     const newFiles = newFilesArray.map(f => ({
@@ -90,8 +96,8 @@ const PremiumPlanOnboarding = () => {
     setFiles([...files, ...newFiles]);
 
     if (userId) {
-      newFilesArray.forEach(file => {
-        supabase.from('rag_documents').insert({
+      for (const file of newFilesArray) {
+        const { data, error } = await supabase.from('rag_documents').insert({
           user_id: userId,
           file_name: file.name,
           file_type: file.type,
@@ -99,7 +105,13 @@ const PremiumPlanOnboarding = () => {
           file_url: '',
           status: 'uploaded'
         });
-      });
+
+        if (error) {
+          console.error('Error saving document to database:', error);
+        } else {
+          console.log('Document saved to database:', file.name);
+        }
+      }
     }
   };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Play } from 'lucide-react';
 
@@ -7,7 +8,8 @@ interface FinalCTAProps {
   onOpenWaitlist: () => void;
 }
 
-export const FinalCTA: React.FC<FinalCTAProps> = ({ onOpenWaitlist }) => {
+export const FinalCTA: React.FC<FinalCTAProps> = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-24 bg-gradient-to-r from-primary via-secondary to-accent relative overflow-hidden">
       <div className="absolute inset-0 bg-black opacity-10"></div>
@@ -34,9 +36,9 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({ onOpenWaitlist }) => {
             <Button
               variant="primary"
               size="lg"
-              onClick={onOpenWaitlist}
+              onClick={() => navigate('/signup')}
             >
-              Join The Waitlist
+              Get Started
             </Button>
             <Button
               variant="outline"

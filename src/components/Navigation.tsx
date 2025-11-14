@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -7,7 +8,8 @@ interface NavigationProps {
   onOpenWaitlist: () => void;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ onOpenWaitlist }) => {
+export const Navigation: React.FC<NavigationProps> = () => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -68,8 +70,8 @@ export const Navigation: React.FC<NavigationProps> = ({ onOpenWaitlist }) => {
           </div>
 
           <div className="hidden md:block">
-            <Button variant="accent" onClick={onOpenWaitlist}>
-              JOIN THE WAITLIST
+            <Button variant="accent" onClick={() => navigate('/signup')}>
+              GET STARTED
             </Button>
           </div>
 
@@ -110,8 +112,8 @@ export const Navigation: React.FC<NavigationProps> = ({ onOpenWaitlist }) => {
               >
                 FAQ
               </button>
-              <Button variant="accent" className="w-full" onClick={onOpenWaitlist}>
-                JOIN THE WAITLIST
+              <Button variant="accent" className="w-full" onClick={() => navigate('/signup')}>
+                GET STARTED
               </Button>
             </div>
           </motion.div>

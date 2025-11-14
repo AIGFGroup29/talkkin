@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, MessageCircle, Camera, Mic, Video, Check, X, AlertCircle, FileText } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const PremiumPlanOnboarding = () => {
   const navigate = useNavigate();
@@ -15,6 +16,17 @@ const PremiumPlanOnboarding = () => {
   const [currentQ, setCurrentQ] = useState(0);
   const [answer, setAnswer] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUserId();
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -35,11 +47,25 @@ const PremiumPlanOnboarding = () => {
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files).slice(0, 10 - uploadedPhotos.length).map(file => ({
+    const newFiles = Array.from(e.target.files).slice(0, 10 - uploadedPhotos.length);
+    const photoObjects = newFiles.map(file => ({
       name: file.name,
       url: URL.createObjectURL(file)
     }));
-    setUploadedPhotos([...uploadedPhotos, ...newFiles]);
+    setUploadedPhotos([...uploadedPhotos, ...photoObjects]);
+
+    if (userId) {
+      newFiles.forEach(file => {
+        supabase.from('rag_documents').insert({
+          user_id: userId,
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          file_url: '',
+          status: 'uploaded'
+        });
+      });
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -56,11 +82,25 @@ const PremiumPlanOnboarding = () => {
 
   const addFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files).map(f => ({
+    const newFilesArray = Array.from(e.target.files);
+    const newFiles = newFilesArray.map(f => ({
       name: f.name,
       size: (f.size / 1024).toFixed(2) + ' KB'
     }));
     setFiles([...files, ...newFiles]);
+
+    if (userId) {
+      newFilesArray.forEach(file => {
+        supabase.from('rag_documents').insert({
+          user_id: userId,
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          file_url: '',
+          status: 'uploaded'
+        });
+      });
+    }
   };
 
   const startRecording = () => {
@@ -93,6 +133,15 @@ const PremiumPlanOnboarding = () => {
   const saveAnswer = () => {
     if (answer.trim()) {
       setAnswers([...answers, answer]);
+
+      if (userId) {
+        supabase.from('story_answers').insert({
+          user_id: userId,
+          question_number: currentQ + 1,
+          question_text: questions[currentQ],
+          answer_text: answer
+        });
+      }
     }
     setAnswer('');
     if (currentQ < questions.length - 1) {
@@ -670,7 +719,19 @@ const PremiumPlanOnboarding = () => {
               <div style={{ display: 'flex', gap: '16px' }}>
                 <button onClick={() => setStep(6)} style={{ padding: '16px 32px', borderRadius: '9999px', border: '2px solid #83b3d8', background: 'white', color: '#83b3d8', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>Back</button>
                 <button
-                  onClick={() => setStep(8)}
+                  onClick={() => {
+                    if (userId) {
+                      supabase.from('avatars').insert({
+                        user_id: userId,
+                        avatar_name: 'Digital Twin',
+                        avatar_type: 'premium',
+                        voice_type: voiceRecorded ? 'custom' : 'default',
+                        status: 'pending',
+                        photo_urls: uploadedPhotos.map(p => p.url)
+                      });
+                    }
+                    setStep(8);
+                  }}
                   disabled={!selectedLanguage}
                   style={{
                     flex: 1,

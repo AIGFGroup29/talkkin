@@ -16,6 +16,14 @@ interface ChatMessage {
   created_at?: string;
 }
 
+interface FamilyMember {
+  id?: string;
+  name: string;
+  email: string;
+  status: 'invited' | 'active';
+  invitation_sent_at?: string;
+}
+
 const BasicPlanDashboard = () => {
   const [activeTab, setActiveTab] = useState('interact');
   const [message, setMessage] = useState('');
@@ -30,6 +38,11 @@ const BasicPlanDashboard = () => {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [avatarStatus, setAvatarStatus] = useState<'pending' | 'processing' | 'ready'>('pending');
   const [documents, setDocuments] = useState<RagDocument[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyName, setFamilyName] = useState('');
+  const [familyEmail, setFamilyEmail] = useState('');
+  const [familyError, setFamilyError] = useState('');
+  const [familySuccess, setFamilySuccess] = useState('');
 
   useEffect(() => {
     const loadAvatarData = async () => {
@@ -105,6 +118,27 @@ const BasicPlanDashboard = () => {
     loadDocuments();
   }, [activeTab]);
 
+  useEffect(() => {
+    const loadFamilyMembers = async () => {
+      if (activeTab === 'family' && userId) {
+        try {
+          const { data, error } = await supabase
+            .from('family_members')
+            .select('*')
+            .eq('owner_user_id', userId);
+
+          if (data && !error) {
+            setFamilyMembers(data);
+          }
+        } catch (error) {
+          console.error('Error loading family members:', error);
+        }
+      }
+    };
+
+    loadFamilyMembers();
+  }, [activeTab, userId]);
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -159,6 +193,59 @@ const BasicPlanDashboard = () => {
     setTimeout(() => {
       setShowSaveSuccess(false);
     }, 3000);
+  };
+
+  const sendFamilyInvitation = async () => {
+    if (!userId || !familyName.trim() || !familyEmail.trim()) {
+      setFamilyError('Please fill in all fields');
+      setTimeout(() => setFamilyError(''), 3000);
+      return;
+    }
+
+    try {
+      const { count, error: countError } = await supabase
+        .from('family_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_user_id', userId);
+
+      if (countError) throw countError;
+
+      if (count !== null && count >= 2) {
+        setFamilyError('Maximum 2 family members for Basic Plan');
+        setTimeout(() => setFamilyError(''), 3000);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('family_members')
+        .insert({
+          owner_user_id: userId,
+          name: familyName,
+          email: familyEmail,
+          status: 'invited',
+          invitation_sent_at: new Date().toISOString()
+        });
+
+      if (insertError) throw insertError;
+
+      setFamilySuccess('Invitation sent successfully!');
+      setFamilyName('');
+      setFamilyEmail('');
+      setTimeout(() => setFamilySuccess(''), 3000);
+
+      const { data } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('owner_user_id', userId);
+
+      if (data) {
+        setFamilyMembers(data);
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      setFamilyError('Failed to send invitation');
+      setTimeout(() => setFamilyError(''), 3000);
+    }
   };
 
   return (
@@ -526,6 +613,38 @@ const BasicPlanDashboard = () => {
             maxWidth: '900px',
             margin: '0 auto'
           }}>
+            {familyError && (
+              <div style={{
+                position: 'fixed',
+                top: '24px',
+                right: '24px',
+                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                color: 'white',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                boxShadow: '0 8px 32px rgba(239, 68, 68, 0.4)',
+                zIndex: 1000
+              }}>
+                {familyError}
+              </div>
+            )}
+
+            {familySuccess && (
+              <div style={{
+                position: 'fixed',
+                top: '24px',
+                right: '24px',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                boxShadow: '0 8px 32px rgba(16, 185, 129, 0.4)',
+                zIndex: 1000
+              }}>
+                {familySuccess}
+              </div>
+            )}
+
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
               <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: '#1f2937', marginBottom: '12px' }}>Family Access</h2>
               <p style={{ fontSize: '18px', color: '#6b7280', margin: 0 }}>Share your memory avatar with up to 2 family members</p>
@@ -540,11 +659,11 @@ const BasicPlanDashboard = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
                 <h3 style={{ fontSize: '28px', fontWeight: '600', color: '#1f2937', margin: 0 }}>Available Seats</h3>
-                <span style={{ fontSize: '56px', fontWeight: 'bold', color: '#1f2937' }}>2 / 2</span>
+                <span style={{ fontSize: '56px', fontWeight: 'bold', color: '#1f2937' }}>{familyMembers.length} / 2</span>
               </div>
               <div style={{ width: '100%', height: '16px', background: 'rgba(255,255,255,0.4)', borderRadius: '9999px', overflow: 'hidden' }}>
                 <div style={{
-                  width: '0%',
+                  width: `${(familyMembers.length / 2) * 100}%`,
                   height: '100%',
                   background: 'linear-gradient(to right, #83b3d8, #f2911b)',
                   transition: 'width 0.5s ease'
@@ -565,6 +684,8 @@ const BasicPlanDashboard = () => {
               <input
                 type="text"
                 placeholder="Enter name"
+                value={familyName}
+                onChange={(e) => setFamilyName(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '18px 24px',
@@ -590,6 +711,8 @@ const BasicPlanDashboard = () => {
               <input
                 type="email"
                 placeholder="Enter email address"
+                value={familyEmail}
+                onChange={(e) => setFamilyEmail(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '18px 24px',
@@ -631,19 +754,22 @@ const BasicPlanDashboard = () => {
               </label>
             </div>
 
-            <button style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #83b3d8, #f2911b)',
-              color: 'white',
-              fontSize: '18px',
-              fontWeight: '600',
-              padding: '20px',
-              borderRadius: '9999px',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(131, 179, 216, 0.4)',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}>
+            <button
+              onClick={sendFamilyInvitation}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #83b3d8, #f2911b)',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: '600',
+                padding: '20px',
+                borderRadius: '9999px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(131, 179, 216, 0.4)',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+            >
               Send Invitation
             </button>
 
@@ -664,17 +790,62 @@ const BasicPlanDashboard = () => {
                 <Users style={{ width: '28px', height: '28px', color: '#83b3d8' }} />
                 Invited Members
               </h3>
-              <div style={{
-                background: '#f8fbfc',
-                borderRadius: '16px',
-                padding: '32px',
-                textAlign: 'center',
-                border: '2px dashed #b3e1f4'
-              }}>
-                <Users style={{ width: '48px', height: '48px', color: '#9ca3af', margin: '0 auto 16px' }} />
-                <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>No family members invited yet</p>
-                <p style={{ color: '#9ca3af', fontSize: '14px', margin: '8px 0 0 0' }}>Invite up to 2 family members to share memories</p>
-              </div>
+              {familyMembers.length === 0 ? (
+                <div style={{
+                  background: '#f8fbfc',
+                  borderRadius: '16px',
+                  padding: '32px',
+                  textAlign: 'center',
+                  border: '2px dashed #b3e1f4'
+                }}>
+                  <Users style={{ width: '48px', height: '48px', color: '#9ca3af', margin: '0 auto 16px' }} />
+                  <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>No family members invited yet</p>
+                  <p style={{ color: '#9ca3af', fontSize: '14px', margin: '8px 0 0 0' }}>Invite up to 2 family members to share memories</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {familyMembers.map((member, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '20px',
+                        background: '#f8fbfc',
+                        borderRadius: '16px',
+                        border: '1px solid #e5e7eb'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <p style={{
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: '#1f2937',
+                          margin: '0 0 4px 0'
+                        }}>
+                          {member.name}
+                        </p>
+                        <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+                          {member.email}
+                        </p>
+                      </div>
+                      <span style={{
+                        padding: '6px 16px',
+                        borderRadius: '9999px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        background: member.status === 'active' ? '#d1fae5' : '#fef3c7',
+                        color: member.status === 'active' ? '#065f46' : '#92400e'
+                      }}>
+                        {member.status === 'active' ? 'Active' : 'Invited'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,10 +1,27 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 const ChoosePlanPage = () => {
   const navigate = useNavigate();
 
   const handlePlanSelect = async (planType: 'basic' | 'premium') => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        await supabase
+          .from('user_profiles')
+          .upsert({
+            id: user.id,
+            plan_type: planType,
+            subscription_status: 'active'
+          });
+      }
+    } catch (error) {
+      console.error('Error saving plan choice:', error);
+    }
+
     if (planType === 'basic') {
       navigate('/onboarding/basic');
     } else {

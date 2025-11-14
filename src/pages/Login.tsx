@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Checkbox } from '../components/ui/Checkbox';
-import { signIn, signInWithGoogle } from '../lib/supabase';
+import { signIn, signInWithGoogle, supabase } from '../lib/supabase';
 import { loginSchema, LoginFormData } from '../lib/validations';
 
 const GoogleIcon = () => (
@@ -88,8 +88,34 @@ export const Login: React.FC = () => {
         localStorage.removeItem('talkkin_remember_me');
       }
 
-      await signIn(data);
-      navigate('/choose-plan');
+      const authResult = await signIn(data);
+      const userId = authResult.user?.id;
+
+      if (userId) {
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('plan_type')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (profileData?.plan_type) {
+          const { data: avatarData } = await supabase
+            .from('avatars')
+            .select('status')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          if (avatarData?.status === 'ready') {
+            navigate(`/dashboard/${profileData.plan_type}`);
+          } else {
+            navigate(`/onboarding/${profileData.plan_type}`);
+          }
+        } else {
+          navigate('/choose-plan');
+        }
+      } else {
+        navigate('/choose-plan');
+      }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
     } finally {

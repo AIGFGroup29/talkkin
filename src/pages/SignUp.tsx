@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
-import { signUp, signInWithGoogle } from '../lib/supabase';
+import { signUp, signInWithGoogle, supabase } from '../lib/supabase';
 import { signUpSchema, SignUpFormData } from '../lib/validations';
 
 const GoogleIcon = () => (
@@ -73,8 +73,34 @@ export const SignUp: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await signUp(data);
-      navigate('/choose-plan');
+      const authResult = await signUp(data);
+      const userId = authResult.user?.id;
+
+      if (userId) {
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('plan_type')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (profileData?.plan_type) {
+          const { data: avatarData } = await supabase
+            .from('avatars')
+            .select('status')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          if (avatarData?.status === 'ready') {
+            navigate(`/dashboard/${profileData.plan_type}`);
+          } else {
+            navigate(`/onboarding/${profileData.plan_type}`);
+          }
+        } else {
+          navigate('/choose-plan');
+        }
+      } else {
+        navigate('/choose-plan');
+      }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
     } finally {
